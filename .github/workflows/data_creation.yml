@@ -1,0 +1,31 @@
+name: Phase 1 - Data Creation
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 07:37 JST, Monday-Friday. GitHub Actions cron runs in UTC, and JST (UTC+9)
+    # is ahead of UTC, so this fires at 22:37 UTC the previous day; the weekday
+    # field is shifted back by one day accordingly (Sun-Thu UTC = Mon-Fri JST).
+    - cron: "37 22 * * 0-4"
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Phase 1 data creation pipeline
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          DATASET_ID: ${{ secrets.DATASET_ID }}
+        run: python -m src.main
