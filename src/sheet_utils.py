@@ -40,6 +40,10 @@ def write_column(worksheet, column_name: str, values: list) -> int:
         col_idx = len(headers) + 1
         worksheet.update_cell(1, col_idx, column_name)
 
+    if not values:
+        # Nothing to write - R2C{col}:R1C{col} would be an inverted (invalid) range.
+        return col_idx
+
     worksheet.update(
         [[v] for v in values],
         f"R2C{col_idx}:R{len(values) + 1}C{col_idx}",
