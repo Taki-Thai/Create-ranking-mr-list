@@ -97,14 +97,15 @@ def assign_pattern(s_rank_df, df_active_dr_at_mr_hp, df_case2):
     return s_rank_df
 
 
-def assign_suggested_hospital_name(s_rank_df, df_case2):
-    """Step 45b: for Pattern 2/3 rows, list the Case2 hospitals for that MR, ordered by Dr count desc."""
+def assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3):
+    """Step 45b: for Pattern 2/3 rows, list up to `max_hospitals` Case2 hospitals for that MR,
+    ordered by Dr count desc."""
     suggest_map = (
         df_case2[["MrOfficeUserId", "officeName"]]
         .dropna(subset=["officeName"])
         .groupby("MrOfficeUserId")["officeName"]
         .apply(lambda x: ", ".join(
-            name for name, _ in sorted(x.value_counts().items(), key=lambda t: t[1], reverse=True)
+            name for name, _ in sorted(x.value_counts().items(), key=lambda t: t[1], reverse=True)[:max_hospitals]
         ))
         .reset_index()
         .rename(columns={"MrOfficeUserId": "officeuserid", "officeName": "suggest_hospital_name"})

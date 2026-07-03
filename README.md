@@ -171,7 +171,8 @@ For each S-rank row, check membership in Case1 (`officeid` ∈ `df_active_dr_at_
 Then write the `Pattern` column back to `Sランクリスト`.
 
 ### Cell 23 — Step 45b/46: add `suggest_hospital_name`
-- Build map `MrOfficeUserId → comma-joined officeName list` from `df_case2`, ordered by Dr count desc.
+- Build map `MrOfficeUserId → comma-joined officeName list` from `df_case2`, ordered by Dr count desc,
+  capped at the **top 3** hospitals per MR (`assign_suggested_hospital_name(..., max_hospitals=3)`).
 - Merge into `s_rank_df`; blank it out for rows **not** Pattern 2 or 3.
 - Write **both** `Pattern` and `suggest_hospital_name` columns back to `Sランクリスト`.
 
