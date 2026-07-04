@@ -44,6 +44,8 @@ def overwrite_sheet_with_dataframe(worksheet, df, cast_to_str: bool = True):
     df = df.fillna("")
     if cast_to_str:
         df = df.astype(str)
+
+    df = df.drop(columns=["Column 12", "Column 13"], errors="ignore")
     set_with_dataframe(worksheet, df)
 
 
