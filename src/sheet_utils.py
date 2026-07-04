@@ -5,8 +5,23 @@ per run) and uses R{row}C{col}-ranged updates for single-column write-backs,
 which assumes row order matches the existing sheet.
 """
 
+import re
+
 import gspread
 from gspread_dataframe import set_with_dataframe
+
+
+def _drop_spurious_columns(df):
+    """Remove auto-generated extra columns such as 'Column 12' or 'Unnamed: 0'."""
+    spurious_columns = [
+        col
+        for col in df.columns
+        if isinstance(col, str)
+        and (
+            col.startswith("Unnamed:") or re.fullmatch(r"Column\s+\d+", col)
+        )
+    ]
+    return df.drop(columns=spurious_columns, errors="ignore")
 
 
 def get_or_create_worksheet(spreadsheet, title: str):
@@ -25,6 +40,7 @@ def overwrite_sheet_with_dataframe(worksheet, df, cast_to_str: bool = True):
     the original, so pass cast_to_str=False there to match.
     """
     worksheet.clear()
+    df = _drop_spurious_columns(df)
     df = df.fillna("")
     if cast_to_str:
         df = df.astype(str)
