@@ -108,7 +108,14 @@ def push_s_rank_to_sheet(gspread_client, s_rank_df):
     spreadsheet_out = gspread_client.open_by_key(config.SPREADSHEET_ID_OUT)
     ws_out = get_or_create_worksheet(spreadsheet_out, config.SHEET_S_RANK)
 
-    s_rank_df = s_rank_df.rename(columns={"リクエスト日時 Date": "面会リクエスト日時"})
+    s_rank_df = s_rank_df.rename(
+        columns={
+            "リクエスト日時 Date": "Request meeting time",
+            "未読のメッセージ数": "Unread message",
+            "既読者ID": "reader_id",
+        },
+        errors="ignore",
+    )
     overwrite_sheet_with_dataframe(ws_out, s_rank_df)
     print(f"✓ Pushed {s_rank_df.shape[0]:,} rows to sheet '{config.SHEET_S_RANK}'")
 
