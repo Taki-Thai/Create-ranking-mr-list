@@ -108,6 +108,10 @@ def push_s_rank_to_sheet(gspread_client, s_rank_df):
     spreadsheet_out = gspread_client.open_by_key(config.SPREADSHEET_ID_OUT)
     ws_out = get_or_create_worksheet(spreadsheet_out, config.SHEET_S_RANK)
 
+    s_rank_df = s_rank_df.drop(
+        columns=["is_first_purchase", "number_of_contract", "assigned_hospital_count"],
+        errors="ignore",
+    )
     s_rank_df = s_rank_df.rename(
         columns={
             "リクエスト日時 Date": "Request meeting time",
