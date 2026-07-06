@@ -46,7 +46,7 @@ def overwrite_sheet_with_dataframe(worksheet, df, cast_to_str: bool = True):
         df = df.astype(str)
 
     df = df.drop(columns=["Column 12", "Column 13"], errors="ignore")
-     set_with_dataframe(worksheet, df)
+    set_with_dataframe(worksheet, df)
 
 
 def write_column(worksheet, column_name: str, values: list) -> int:
