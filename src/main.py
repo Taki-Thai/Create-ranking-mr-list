@@ -44,10 +44,10 @@ def main():
     df_dractive_users = dr_active.enrich_dr_active_users(df_dractive_users, df_menkai, df_dr_chat)
     dr_active.write_back_meeting_request_date(spreadsheet_main, df_dractive_users)
 
-    # Steps 27-36: S-rank list
+    # Steps 27-36: S-rank list (step 34 sheet mirror of raw menkai/chat removed:
+    # the raw CSVs outgrew the Sheets cell limit)
     lp_info_new = s_rank.filter_new_lite_plan_purchases(lp_info, df_prjoy_userinfo)
-    lp_info_new, df_mr_menkai_raw, df_mr_chat_raw = s_rank.join_menkai_and_chat(drive_service, lp_info_new)
-    s_rank.overwrite_menkai_and_chat_sheets(spreadsheet_main, df_mr_menkai_raw, df_mr_chat_raw)
+    lp_info_new = s_rank.join_menkai_and_chat(drive_service, lp_info_new)
     s_rank_df = s_rank.build_s_rank_df(lp_info_new)
     spreadsheet_out, s_rank_df = s_rank.push_s_rank_to_sheet(gspread_client, s_rank_df)
 

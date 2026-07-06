@@ -35,7 +35,11 @@ def filter_new_lite_plan_purchases(lp_info, df_prjoy_userinfo):
 
 
 def join_menkai_and_chat(drive_service, lp_info_new):
-    """Step 30-33: join latest MR menkai request date and aggregated MR chat status."""
+    """Step 30-33: join latest MR menkai request date and aggregated MR chat status.
+
+    The raw menkai/chat CSVs are only used in-memory here; they are no longer
+    mirrored to tracking sheets (data outgrew the Sheets cell limit).
+    """
     df_mr_menkai_raw = load_csv_by_name(drive_service, config.FOLDER_ID_DR_ACTIVITY, "dr_menkai_status.csv")
 
     df_mr_menkai = df_mr_menkai_raw.copy()
@@ -71,18 +75,7 @@ def join_menkai_and_chat(drive_service, lp_info_new):
     lp_info_new = lp_info_new.merge(chat_map, on="officeuserid", how="left")
     print(f"✓ lp_info_new after menkai/chat join: {lp_info_new.shape[0]:,} rows x {lp_info_new.shape[1]} cols")
 
-    return lp_info_new, df_mr_menkai_raw, df_mr_chat_raw
-
-
-def overwrite_menkai_and_chat_sheets(spreadsheet_main, df_mr_menkai_raw, df_mr_chat_raw):
-    """Step 34: overwrite the raw menkai/chat sheets with the freshly-read CSVs."""
-    ws_menkai_mr = spreadsheet_main.worksheet(config.SHEET_MENKAI_MR)
-    overwrite_sheet_with_dataframe(ws_menkai_mr, df_mr_menkai_raw, cast_to_str=False)
-    print(f"✓ Overwrote sheet '{config.SHEET_MENKAI_MR}' ({df_mr_menkai_raw.shape[0]:,} rows)")
-
-    ws_chat_mr = spreadsheet_main.worksheet(config.SHEET_CHAT_MR)
-    overwrite_sheet_with_dataframe(ws_chat_mr, df_mr_chat_raw, cast_to_str=False)
-    print(f"✓ Overwrote sheet '{config.SHEET_CHAT_MR}' ({df_mr_chat_raw.shape[0]:,} rows)")
+    return lp_info_new
 
 
 def build_s_rank_df(lp_info_new):

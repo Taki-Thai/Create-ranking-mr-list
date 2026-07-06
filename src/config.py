@@ -41,8 +41,6 @@ SPREADSHEET_ID_OUT = "1oEIr4zbl8YPrbiPqXXL1KQ-DAD1JV4lGeuZw64O8pfg"
 # ── Sheet names ──
 SHEET_MR_MASTER_INFO = "Mr Master Info"
 SHEET_DR_USER_ACTIVE = "5.Dr user active"
-SHEET_MENKAI_MR = "4.5 面会リクエスト(MR)"
-SHEET_CHAT_MR = "4.メッセージ （MR)"
 SHEET_S_RANK = "Sランクリスト"
 SHEET_ACTIVE_DR_USER = "acvite dr user"
 SHEET_CASE1 = "List_dr_LP_hospital"
