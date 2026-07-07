@@ -147,6 +147,7 @@ Markdown header cell 6: `実行計画_フェーズ1‐データ作成` (Executio
 - **cond1** (stuck chat): chat `Updated Date` ≥ 5 days old **AND** `既読者ID` empty (unread).
 - **cond2** (stuck menkai): menkai request ≥ 5 days old.
 - `s_rank_df = lp_info_new[cond1 | cond2]`.
+- Adds a **`S判定条件`** column recording which condition qualified the row: `メッセージ` (cond1), `面会` (cond2), or `メッセージ・面会` (both).
 
 ### Cell 18 — Step 36: push `s_rank_df` → output spreadsheet `1oEIr4...` sheet **`Sランクリスト`** (renames `リクエスト日時 Date`→`面会リクエスト日時`, clears + writes). `spreadsheet_out` defined here is reused by later cells.
 

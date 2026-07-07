@@ -90,7 +90,22 @@ def build_s_rank_df(lp_info_new):
     )
     cond2 = (today - request_date).dt.days >= 5
 
-    s_rank_df = lp_info_new[cond1 | cond2].copy()
+    mask = cond1 | cond2
+    s_rank_df = lp_info_new[mask].copy()
+
+    # S判定条件: which condition(s) qualified this row for rank S -
+    # cond1 (stuck unread chat) -> "メッセージ", cond2 (stuck menkai request) -> "面会".
+    def _judge(has_chat, has_menkai):
+        labels = []
+        if has_chat:
+            labels.append("メッセージ")
+        if has_menkai:
+            labels.append("面会")
+        return "・".join(labels)
+
+    s_rank_df["S判定条件"] = [
+        _judge(bool(a), bool(b)) for a, b in zip(cond1[mask], cond2[mask])
+    ]
     print(f"✓ s_rank_df: {s_rank_df.shape[0]:,} rows (cond1={cond1.sum():,}, cond2={cond2.sum():,})")
 
     return s_rank_df
