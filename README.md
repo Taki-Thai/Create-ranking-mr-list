@@ -167,19 +167,19 @@ Markdown header cell 6: `実行計画_フェーズ1‐データ作成` (Executio
 
 ### Cell 22 — Steps 45–46: assign `Pattern` to `s_rank_df`
 For each S-rank row, check membership in Case1 (`officeid` ∈ `df_active_dr_at_mr_hp`) and Case2 (`officeuserid` ∈ `df_case2.MrOfficeUserId`):
-- in both → **Pattern 3**; only Case1 → **Pattern 1**; only Case2 → **Pattern 2**; neither → **Pattern 0**.
+- in both → **Pattern Sα-3**; only Case1 → **Pattern Sα-1**; only Case2 → **Pattern Sα-2**; neither → **Pattern 0**.
 Then write the `Pattern` column back to `Sランクリスト`.
 
 ### Cell 23 — Step 45b/46: add `suggest_hospital_name`
 - Build map `MrOfficeUserId → comma-joined officeName list` from `df_case2`, ordered by Dr count desc,
   capped at the **top 3** hospitals per MR (`assign_suggested_hospital_name(..., max_hospitals=3)`).
-- Merge into `s_rank_df`; blank it out for rows **not** Pattern 2 or 3.
+- Merge into `s_rank_df`; blank it out for rows **not** Pattern Sα-2 or Sα-3.
 - Write **both** `Pattern` and `suggest_hospital_name` columns back to `Sランクリスト`.
 
 > **Pattern semantics (business meaning):**
-> - **Pattern 1** — MR's purchased hospital has active Drs to engage now.
-> - **Pattern 2** — MR has *other* covered hospitals with active Drs (suggested in `suggest_hospital_name`).
-> - **Pattern 3** — both opportunities exist.
+> - **Pattern Sα-1** — MR's purchased hospital has active Drs to engage now.
+> - **Pattern Sα-2** — MR has *other* covered hospitals with active Drs (suggested in `suggest_hospital_name`).
+> - **Pattern Sα-3** — both opportunities exist.
 > - **Pattern 0** — no active-Dr opportunity found.
 
 ---
