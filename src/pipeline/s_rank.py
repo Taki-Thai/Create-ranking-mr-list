@@ -128,6 +128,13 @@ def push_s_rank_to_sheet(gspread_client, s_rank_df):
         },
         errors="ignore",
     )
+
+    # Keep S判定条件 as the last data column so it sits directly before the
+    # Pattern column that write_back_pattern_and_suggestion appends afterwards.
+    if "S判定条件" in s_rank_df.columns:
+        ordered = [c for c in s_rank_df.columns if c != "S判定条件"] + ["S判定条件"]
+        s_rank_df = s_rank_df[ordered]
+
     overwrite_sheet_with_dataframe(ws_out, s_rank_df)
     print(f"✓ Pushed {s_rank_df.shape[0]:,} rows to sheet '{config.SHEET_S_RANK}'")
 
