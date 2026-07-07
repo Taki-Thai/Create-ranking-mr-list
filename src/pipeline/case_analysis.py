@@ -74,7 +74,7 @@ def push_case2_to_sheet(spreadsheet_out, df_case2):
 
 
 def assign_pattern(s_rank_df, df_active_dr_at_mr_hp, df_case2):
-    """Step 45: Pattern S1 = Case1 only, Pattern S2 = Case2 only, Pattern S3 = both, Pattern 0 = neither."""
+    """Step 45: Pattern Sα-1 = Case1 only, Pattern Sα-2 = Case2 only, Pattern Sα-3 = both, Pattern 0 = neither."""
     case1_officeids = set(df_active_dr_at_mr_hp["officeId"].astype(str).unique())
     case2_mrids = set(df_case2["MrOfficeUserId"].astype(str).unique())
 
@@ -82,11 +82,11 @@ def assign_pattern(s_rank_df, df_active_dr_at_mr_hp, df_case2):
         in_case1 = str(row["officeid"]) in case1_officeids
         in_case2 = str(row["officeuserid"]) in case2_mrids
         if in_case1 and in_case2:
-            return "Pattern S3"
+            return "Pattern Sα-3"
         elif in_case1:
-            return "Pattern S1"
+            return "Pattern Sα-1"
         elif in_case2:
-            return "Pattern S2"
+            return "Pattern Sα-2"
         return "Pattern 0"
 
     s_rank_df = s_rank_df.copy()
@@ -98,7 +98,7 @@ def assign_pattern(s_rank_df, df_active_dr_at_mr_hp, df_case2):
 
 
 def assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3):
-    """Step 45b: for Pattern S2/S3 rows, list up to `max_hospitals` Case2 hospitals for that MR,
+    """Step 45b: for Pattern Sα-2/Sα-3 rows, list up to `max_hospitals` Case2 hospitals for that MR,
     ordered by Dr count desc."""
     suggest_map = (
         df_case2[["MrOfficeUserId", "officeName"]]
@@ -116,7 +116,7 @@ def assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3):
         s_rank_df = s_rank_df.drop(columns=["suggest_hospital_name"])
 
     s_rank_df = s_rank_df.merge(suggest_map, on="officeuserid", how="left")
-    s_rank_df.loc[~s_rank_df["Pattern"].isin(["Pattern S2", "Pattern S3"]), "suggest_hospital_name"] = ""
+    s_rank_df.loc[~s_rank_df["Pattern"].isin(["Pattern Sα-2", "Pattern Sα-3"]), "suggest_hospital_name"] = ""
 
     return s_rank_df
 
