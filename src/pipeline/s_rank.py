@@ -112,15 +112,18 @@ def build_s_rank_df(lp_info_new):
     return s_rank_df
 
 
-def office_ids_sent_this_month(spreadsheet_out):
-    """Office user IDs already logged (sent) in the current month, read from the 'Log' sheet.
+SENT_WINDOW_DAYS = 30
+
+
+def office_ids_sent_recently(spreadsheet_out):
+    """Office user IDs already logged (sent) within the last SENT_WINDOW_DAYS days, from the 'Log' sheet.
 
     The Log sheet mirrors the output rows plus a 送信日時 timestamp written when each
-    row is appended. Anyone whose 送信日時 falls in the current month has already been
-    contacted this month and must not be sent again, so we exclude them from the push.
-    The Log labels its id column 'officeUserId' (camelCase) while s_rank_df uses
-    'officeuserid'; we match it case-insensitively. Fails safe (returns an empty set)
-    if the Log sheet or its expected columns are absent.
+    row is appended. Anyone whose 送信日時 is within the last 30 days (up to now) has
+    already been contacted recently and must not be sent again, so we exclude them
+    from the push. The Log labels its id column 'officeUserId' (camelCase) while
+    s_rank_df uses 'officeuserid'; we match it case-insensitively. Fails safe
+    (returns an empty set) if the Log sheet or its expected columns are absent.
     """
     try:
         ws_log = spreadsheet_out.worksheet(config.SHEET_LOG)
@@ -141,31 +144,32 @@ def office_ids_sent_this_month(spreadsheet_out):
     # format="mixed" parses each 送信日時 value independently, so a stray date-only or
     # differently-formatted cell doesn't silently become NaT and slip through the filter.
     sent = pd.to_datetime(log_df["送信日時"], errors="coerce", format="mixed")
-    today = pd.Timestamp.now()
-    this_month = sent.dt.year.eq(today.year) & sent.dt.month.eq(today.month)
-    ids = log_df.loc[this_month, id_col].astype(str).str.strip()
+    today = pd.Timestamp.now().normalize()
+    days_since = (today - sent.dt.normalize()).dt.days
+    recent = days_since.between(0, SENT_WINDOW_DAYS)  # sent within the last 30 days (future dates excluded)
+    ids = log_df.loc[recent, id_col].astype(str).str.strip()
     ids = set(ids[ids != ""])
-    print(f"✓ {len(ids):,} officeuserid(s) already sent this month (from '{config.SHEET_LOG}')")
+    print(f"✓ {len(ids):,} officeuserid(s) sent within the last {SENT_WINDOW_DAYS} days (from '{config.SHEET_LOG}')")
     return ids
 
 
 def push_s_rank_to_sheet(gspread_client, s_rank_df):
     """Step 36: push s_rank_df to the 'Sランクリスト' output sheet.
 
-    Before writing, drop any officeuserid that was already sent this month (present
-    in the 'Log' sheet with a current-month 送信日時) so nobody is contacted twice
-    in the same month.
+    Before writing, drop any officeuserid that was already sent within the last 30
+    days (present in the 'Log' sheet with a 送信日時 in that window) so nobody is
+    contacted twice inside a 30-day window.
     """
     spreadsheet_out = gspread_client.open_by_key(config.SPREADSHEET_ID_OUT)
     ws_out = get_or_create_worksheet(spreadsheet_out, config.SHEET_S_RANK)
 
-    already_sent = office_ids_sent_this_month(spreadsheet_out)
+    already_sent = office_ids_sent_recently(spreadsheet_out)
     if already_sent:
         before = len(s_rank_df)
         s_rank_df = s_rank_df[
             ~s_rank_df["officeuserid"].astype(str).str.strip().isin(already_sent)
         ].copy()
-        print(f"✓ Excluded {before - len(s_rank_df):,} row(s) already sent this month; {len(s_rank_df):,} remain")
+        print(f"✓ Excluded {before - len(s_rank_df):,} row(s) sent within the last {SENT_WINDOW_DAYS} days; {len(s_rank_df):,} remain")
 
     s_rank_df = s_rank_df.drop(
         columns=["is_first_purchase", "number_of_contract", "assigned_hospital_count"],
