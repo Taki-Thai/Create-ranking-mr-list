@@ -118,7 +118,9 @@ def office_ids_sent_this_month(spreadsheet_out):
     The Log sheet mirrors the output rows plus a 送信日時 timestamp written when each
     row is appended. Anyone whose 送信日時 falls in the current month has already been
     contacted this month and must not be sent again, so we exclude them from the push.
-    Fails safe (returns an empty set) if the Log sheet or its expected columns are absent.
+    The Log labels its id column 'officeUserId' (camelCase) while s_rank_df uses
+    'officeuserid'; we match it case-insensitively. Fails safe (returns an empty set)
+    if the Log sheet or its expected columns are absent.
     """
     try:
         ws_log = spreadsheet_out.worksheet(config.SHEET_LOG)
@@ -131,8 +133,9 @@ def office_ids_sent_this_month(spreadsheet_out):
         return set()
 
     log_df = pd.DataFrame(records)
-    if "送信日時" not in log_df.columns or "officeuserid" not in log_df.columns:
-        print("⚠ Log sheet missing 'officeuserid' or '送信日時' - skipping already-sent filter")
+    id_col = next((c for c in log_df.columns if str(c).strip().lower() == "officeuserid"), None)
+    if "送信日時" not in log_df.columns or id_col is None:
+        print("⚠ Log sheet missing 'officeUserId' or '送信日時' - skipping already-sent filter")
         return set()
 
     # format="mixed" parses each 送信日時 value independently, so a stray date-only or
@@ -140,7 +143,7 @@ def office_ids_sent_this_month(spreadsheet_out):
     sent = pd.to_datetime(log_df["送信日時"], errors="coerce", format="mixed")
     today = pd.Timestamp.now()
     this_month = sent.dt.year.eq(today.year) & sent.dt.month.eq(today.month)
-    ids = log_df.loc[this_month, "officeuserid"].astype(str).str.strip()
+    ids = log_df.loc[this_month, id_col].astype(str).str.strip()
     ids = set(ids[ids != ""])
     print(f"✓ {len(ids):,} officeuserid(s) already sent this month (from '{config.SHEET_LOG}')")
     return ids
