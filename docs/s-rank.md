@@ -98,8 +98,8 @@ lp_info ─filter_new_lite_plan_purchases→ lp_info_new ─join_menkai_and_chat
   **inclusive** — exactly-30-days-ago is still excluded.
 - `S判定条件` alignment relies on `zip(cond1[mask], cond2[mask])` following the same
   row order as `lp_info_new[mask]` — it does; don't reorder before assigning it.
-- Final sheet column order: `… , S判定条件, Pattern, suggest_hospital_name` (last two
-  appended later by `write_column`).
+- Final sheet column order: `… , S判定条件, Pattern, suggest_hospital_name,
+  suggest_hospital_officeid` (the last three appended later by `write_column`).
 
 ---
 
@@ -138,7 +138,10 @@ Two opportunity cases, then the Pattern label and suggested hospitals.
   - neither → **`Pattern 0`**
 - **`assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3)`** (Step 45b):
   for `Pattern Sα-2`/`Sα-3` rows, list up to **3** Case2 hospitals for that MR,
-  ordered by Dr count desc; **blanked** for other patterns.
+  ordered by Dr count desc — as **`suggest_hospital_name`** (names) plus
+  **`suggest_hospital_officeid`** (their officeIds, same order, comma-joined in one
+  cell). Both **blanked** for other patterns. Ranking groups by
+  `(MrOfficeUserId, officeId, officeName)` so the two lists stay aligned.
 - **`write_back_pattern_and_suggestion(spreadsheet_out, s_rank_df)`** (Step 46):
   `write_column` for `Pattern` then `suggest_hospital_name` on `Sランクリスト`.
 

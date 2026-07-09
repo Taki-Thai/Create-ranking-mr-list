@@ -1,5 +1,7 @@
 """Phase 1, Steps 40-46: Case 1 / Case 2 opportunity detection, Pattern + suggested hospital name."""
 
+import pandas as pd
+
 from .. import config
 from ..sheet_utils import get_or_create_worksheet, overwrite_sheet_with_dataframe, write_column
 
@@ -98,25 +100,40 @@ def assign_pattern(s_rank_df, df_active_dr_at_mr_hp, df_case2):
 
 
 def assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3):
-    """Step 45b: for Pattern Sα-2/Sα-3 rows, list up to `max_hospitals` Case2 hospitals for that MR,
-    ordered by Dr count desc."""
-    suggest_map = (
-        df_case2[["MrOfficeUserId", "officeName"]]
+    """Step 45b: for Pattern Sα-2/Sα-3 rows, list up to `max_hospitals` Case2 hospitals for
+    that MR - both their names (suggest_hospital_name) and matching officeIds
+    (suggest_hospital_officeid), same order, ranked by Dr count desc."""
+    # Dr-row count per (MR, hospital) -> rank hospitals within each MR. Grouping by
+    # officeId+officeName together keeps the name/id lists aligned when joined below.
+    ranked = (
+        df_case2[["MrOfficeUserId", "officeId", "officeName"]]
         .dropna(subset=["officeName"])
-        .groupby("MrOfficeUserId")["officeName"]
-        .apply(lambda x: ", ".join(
-            name for name, _ in sorted(x.value_counts().items(), key=lambda t: t[1], reverse=True)[:max_hospitals]
-        ))
-        .reset_index()
-        .rename(columns={"MrOfficeUserId": "officeuserid", "officeName": "suggest_hospital_name"})
+        .groupby(["MrOfficeUserId", "officeId", "officeName"])
+        .size()
+        .reset_index(name="dr_count")
+        .sort_values(["MrOfficeUserId", "dr_count"], ascending=[True, False])
     )
 
+    def _topn_join(group, col):
+        return ", ".join(group[col].astype(str).head(max_hospitals))
+
+    suggest_map = (
+        ranked.groupby("MrOfficeUserId")
+        .apply(lambda g: pd.Series({
+            "suggest_hospital_name": _topn_join(g, "officeName"),
+            "suggest_hospital_officeid": _topn_join(g, "officeId"),
+        }))
+        .reset_index()
+        .rename(columns={"MrOfficeUserId": "officeuserid"})
+    )
+
+    suggest_cols = ["suggest_hospital_name", "suggest_hospital_officeid"]
     s_rank_df = s_rank_df.copy()
-    if "suggest_hospital_name" in s_rank_df.columns:
-        s_rank_df = s_rank_df.drop(columns=["suggest_hospital_name"])
+    s_rank_df = s_rank_df.drop(columns=[c for c in suggest_cols if c in s_rank_df.columns])
 
     s_rank_df = s_rank_df.merge(suggest_map, on="officeuserid", how="left")
-    s_rank_df.loc[~s_rank_df["Pattern"].isin(["Pattern Sα-2", "Pattern Sα-3"]), "suggest_hospital_name"] = ""
+    other = ~s_rank_df["Pattern"].isin(["Pattern Sα-2", "Pattern Sα-3"])
+    s_rank_df.loc[other, suggest_cols] = ""
 
     return s_rank_df
 
@@ -124,7 +141,7 @@ def assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3):
 def write_back_pattern_and_suggestion(spreadsheet_out, s_rank_df):
     """Step 46: write both Pattern and suggest_hospital_name columns back to the sheet."""
     ws_out = spreadsheet_out.worksheet(config.SHEET_S_RANK)
-    for column_name in ["Pattern", "suggest_hospital_name"]:
+    for column_name in ["Pattern", "suggest_hospital_name", "suggest_hospital_officeid"]:
         values = s_rank_df[column_name].fillna("").tolist()
         col_idx = write_column(ws_out, column_name, values)
         print(f"✓ Wrote '{column_name}' -> column {col_idx} of sheet '{config.SHEET_S_RANK}' ({len(values):,} rows)")
