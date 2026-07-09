@@ -45,6 +45,25 @@ def join_menkai_and_chat(drive_service, lp_info_new):
 
     df_mr_menkai = df_mr_menkai_raw.copy()
     df_mr_menkai["Mr Office User ID"] = df_mr_menkai["Mr Office User ID"].astype(str).str.strip()
+    df_mr_menkai["面会ステータス"] = df_mr_menkai["面会ステータス"].astype(str).str.strip()
+
+    # Total FIXED / NEW menkai request counts per MR (from all rows, before the NEW-only
+    # filter below). These two columns ride along to the Sランクリスト output sheet.
+    fixed_count = (
+        df_mr_menkai[df_mr_menkai["面会ステータス"] == "FIXED"]
+        .groupby("Mr Office User ID").size().rename("menkai_fixed_count")
+    )
+    new_count = (
+        df_mr_menkai[df_mr_menkai["面会ステータス"] == "NEW"]
+        .groupby("Mr Office User ID").size().rename("menkai_new_count")
+    )
+    menkai_counts = (
+        pd.concat([fixed_count, new_count], axis=1)
+        .fillna(0).astype(int)
+        .reset_index()
+        .rename(columns={"Mr Office User ID": "officeuserid"})
+    )
+
     df_mr_menkai = df_mr_menkai[df_mr_menkai["面会ステータス"] == "NEW"]
 
     if "リクエスト日時 Date" in lp_info_new.columns:
@@ -57,6 +76,13 @@ def join_menkai_and_chat(drive_service, lp_info_new):
         .max()
     )
     lp_info_new = lp_info_new.merge(menkai_mr_map, on="officeuserid", how="left")
+
+    for col in ["menkai_fixed_count", "menkai_new_count"]:
+        if col in lp_info_new.columns:
+            lp_info_new = lp_info_new.drop(columns=[col])
+    lp_info_new = lp_info_new.merge(menkai_counts, on="officeuserid", how="left")
+    lp_info_new["menkai_fixed_count"] = lp_info_new["menkai_fixed_count"].fillna(0).astype(int)
+    lp_info_new["menkai_new_count"] = lp_info_new["menkai_new_count"].fillna(0).astype(int)
 
     df_mr_chat_raw = load_csv_by_name(drive_service, config.FOLDER_ID_DR_ACTIVITY, "mr_chat_status.csv")
     df_mr_chat = df_mr_chat_raw.copy()

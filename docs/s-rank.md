@@ -55,6 +55,10 @@ lp_info ─filter_new_lite_plan_purchases→ lp_info_new ─join_menkai_and_chat
 - **`join_menkai_and_chat(drive_service, lp_info_new)`** (Steps 30–33):
   - `dr_menkai_status.csv` filtered **`NEW`** → latest `リクエスト日時 Date` per MR
     (`Mr Office User ID → officeuserid`).
+  - **Also** (from the *unfiltered* menkai CSV, before the NEW-only filter) counts
+    per MR of `面会ステータス=="FIXED"` and `=="NEW"` → columns
+    **`menkai_fixed_count`** / **`menkai_new_count`** (missing → 0, int). These ride
+    along `s_rank_df` all the way to the `Sランクリスト` sheet.
   - `mr_chat_status.csv` → per-MR aggregate: `未読のメッセージ数` **sum**,
     `既読者ID` **last**, `Updated Date` **max**.
   - Drops any pre-existing copies before each merge (idempotent re-join).
