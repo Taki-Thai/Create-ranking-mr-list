@@ -47,10 +47,19 @@ def join_menkai_and_chat(drive_service, lp_info_new):
     df_mr_menkai["Mr Office User ID"] = df_mr_menkai["Mr Office User ID"].astype(str).str.strip()
     df_mr_menkai["面会ステータス"] = df_mr_menkai["面会ステータス"].astype(str).str.strip()
 
+    # Chỉ giữ menkai do MR gửi (loại record DR/MD gửi cho MR). Phải chạy TRƯỚC mọi
+    # count/aggregate ở phía MR — nếu không, menkai do DR/MD tạo bị đếm nhầm vào hoạt
+    # động của MR và có thể che khuất menkai MR đang stuck (bug ngầm trước đây).
+    df_mr_menkai["リクエスト元"] = df_mr_menkai["リクエスト元"].astype(str).str.strip()
+    df_mr_menkai = df_mr_menkai[df_mr_menkai["リクエスト元"] == "MR"]
+    print(f"✓ df_mr_menkai filtered to リクエスト元=='MR': {df_mr_menkai.shape[0]:,} rows")
+
     # Total FIXED / NEW menkai request counts per MR (from all rows, before the NEW-only
     # filter below). These two columns ride along to the Sランクリスト output sheet.
+    # FIXED count also includes CANCELED (Measuring §8: CANCELED = Dr đã có động thái,
+    # tương đương FIXED về mặt "menkai đã được Dr phản hồi").
     fixed_count = (
-        df_mr_menkai[df_mr_menkai["面会ステータス"] == "FIXED"]
+        df_mr_menkai[df_mr_menkai["面会ステータス"].isin(["FIXED", "CANCELED"])]
         .groupby("Mr Office User ID").size().rename("menkai_fixed_count")
     )
     new_count = (
