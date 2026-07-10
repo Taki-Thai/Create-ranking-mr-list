@@ -150,6 +150,9 @@ def write_back_pattern_and_suggestion(spreadsheet_out, s_rank_df):
     """Step 46: write both Pattern and suggest_hospital_name columns back to the sheet."""
     ws_out = spreadsheet_out.worksheet(config.SHEET_S_RANK)
     for column_name in ["Pattern", "suggest_hospital_name", "suggest_hospital_officeid"]:
-        values = s_rank_df[column_name].fillna("").tolist()
+        # astype("object") first so fillna takes the object path (not np.isnan):
+        # a 0-row frame can leave a column as numpy void/numeric dtype, which
+        # otherwise breaks fillna with "ufunc 'isnan' not supported".
+        values = s_rank_df[column_name].astype("object").fillna("").tolist()
         col_idx = write_column(ws_out, column_name, values)
         print(f"✓ Wrote '{column_name}' -> column {col_idx} of sheet '{config.SHEET_S_RANK}' ({len(values):,} rows)")
