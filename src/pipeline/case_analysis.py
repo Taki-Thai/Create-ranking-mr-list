@@ -132,6 +132,14 @@ def assign_suggested_hospital_name(s_rank_df, df_case2, max_hospitals=3):
     s_rank_df = s_rank_df.drop(columns=[c for c in suggest_cols if c in s_rank_df.columns])
 
     s_rank_df = s_rank_df.merge(suggest_map, on="officeuserid", how="left")
+    # When df_case2 is empty, groupby().apply() never runs, so suggest_map lacks
+    # these columns and the merge doesn't add them. Guarantee they exist as string
+    # columns; otherwise the masked assignment below creates them as numpy void
+    # dtype on a 0-row frame, which later breaks .fillna() in the write-back.
+    for c in suggest_cols:
+        if c not in s_rank_df.columns:
+            s_rank_df[c] = ""
+        s_rank_df[c] = s_rank_df[c].fillna("").astype(str)
     other = ~s_rank_df["Pattern"].isin(["Pattern Sα-2", "Pattern Sα-3"])
     s_rank_df.loc[other, suggest_cols] = ""
 
